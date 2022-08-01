@@ -26,6 +26,11 @@ public class NovelController {
     return novelService.getNovels(params);
   }
 
+  @GetMapping(path = "/novels/{novelId}", produces = "application/json")
+  public TreeMap<String, Object> getNovel(@RequestParam Map<String, String> params) {
+    return novelService.getNovels(params);
+  }
+
   @PostMapping(path = "/novels", consumes = "multipart/form-data", produces = "application/json")
   public Object addNovel(@ModelAttribute Novel novel, @RequestParam MultipartFile cover,
       @RequestParam MultipartFile[] page) {

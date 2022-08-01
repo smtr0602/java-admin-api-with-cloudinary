@@ -6,16 +6,13 @@ public interface Cloudinary {
     int MAX_RESULT = 500;
   }
 
-  interface PATHS {
-    String ROOT = "kutaka";
-  }
-
   interface BOOK_TYPES {
     String NOVELS = "novels";
     String ESSAYS = "essays";
   }
 
   interface FOLDER_NAMES {
+    String ROOT = "kutaka";
     String PAGES = "pages";
   }
 

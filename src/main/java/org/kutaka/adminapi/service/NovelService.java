@@ -1,20 +1,27 @@
 package org.kutaka.adminapi.service;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import org.kutaka.adminapi.config.CloudinaryConfig;
 import org.kutaka.adminapi.constants.DbFields;
+import org.kutaka.adminapi.exception.AlreadyExistsException;
 import org.kutaka.adminapi.constants.Cloudinary;
 import org.kutaka.adminapi.model.Novel;
+import org.kutaka.adminapi.validator.NovelValidator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import com.cloudinary.api.ApiResponse;
+import com.cloudinary.utils.ObjectUtils;
 
 @Service
 public class NovelService {
@@ -50,6 +57,47 @@ public class NovelService {
     return response;
   }
 
+  public Novel addNovel(Novel novel, MultipartFile cover, MultipartFile[] files) {
+    NovelValidator.validate(novel);
+
+    // check if already exists
+    Map<String, String> param = new HashMap<>();
+    param.put(DbFields.NOVEL.NAME_EN, novel.getNameEn());
+    Query query = createQuery(param, new Query());
+    boolean doesExist = mongoTemplate.find(query, Novel.class).size() > 0;
+    if (doesExist) {
+      throw new AlreadyExistsException("Item with specified name already exists");
+    }
+
+    // cover image
+    try {
+      cloudinaryConfig.getCloudinary().uploader().upload(cover.getBytes(),
+          ObjectUtils.asMap("resource_type", "auto", "public_id", "cover", "discard_original_filename", true,
+              "unique_filename", false, "folder",
+              Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + novel.getNameEn()));
+    } catch (IOException e1) {
+      throw new RuntimeException("Failed in uploading cover image");
+    }
+
+    // page images
+    for (int i = 0; i < files.length; i++) {
+      try {
+        cloudinaryConfig.getCloudinary().uploader().upload(files[i].getBytes(),
+            ObjectUtils.asMap("resource_type", "auto", "public_id", "page-" + String.format("%03d", i + 1),
+                "discard_original_filename", true,
+                "unique_filename", false, "folder",
+                Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + novel.getNameEn()
+                    + "/" + Cloudinary.FOLDER_NAMES.PAGES));
+      } catch (IOException e) {
+        throw new RuntimeException("Failed in uploading page images");
+      }
+    }
+
+    novel = addAutoInsertData(novel);
+
+    return mongoTemplate.insert(novel);
+  }
+
   /**
    * Fetch image data from Cloudinary based on MongoDB results
    */
@@ -61,10 +109,12 @@ public class NovelService {
     String query = "";
     for (int i = 0; i < folders.size(); i++) {
       if (i == 0) {
-        query += "folder:" + Cloudinary.PATHS.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + folders.get(i) + "/*/";
+        query += "folder:" + Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + folders.get(i)
+            + "/*/";
         continue;
       }
-      query += "OR folder:" + Cloudinary.PATHS.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + folders.get(i) + "/*/";
+      query += "OR folder:" + Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + folders.get(i)
+          + "/*/";
     }
     try {
       cloudinaryRes = cloudinaryConfig.getCloudinary().search()
@@ -100,5 +150,17 @@ public class NovelService {
     });
 
     return query;
+  }
+
+  private Novel addAutoInsertData(Novel novel) {
+    Query query = new Query();
+    query.with(Sort.by(Sort.Direction.DESC, DbFields.NOVEL.ORDER)).limit(1);
+    int maxOrder = mongoTemplate.find(query, Novel.class).get(0).getOrder();
+
+    novel.setOrder(maxOrder + 1);
+    novel.setUpdatedAt(new Date());
+    novel.setCreatedAt(new Date());
+
+    return novel;
   }
 }

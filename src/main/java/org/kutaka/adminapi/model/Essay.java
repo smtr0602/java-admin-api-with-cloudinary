@@ -1,34 +1,32 @@
 package org.kutaka.adminapi.model;
 
 import java.util.Date;
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.data.mongodb.core.mapping.Field;
 
 @Document("essays")
 public class Essay {
 
   @Id
   private String id;
-  @Field
-  private boolean isHidden;
-  @Field
+
+  private Boolean isHidden;
+
   private String nameEn;
-  @Field
+
   private String nameJa;
-  @Field
-  private int order;
-  @Field
+
+  private Integer order;
+
   private Object categories;
-  @Field
+
   private Object tags;
-  @Field
+
   private Date createdAt;
-  @Field
+
   private Date updatedAt;
 
-  public Essay(String id, boolean isHidden, String nameEn, String nameJa, int order, Object categories, Object tags,
+  public Essay(String id, Boolean isHidden, String nameEn, String nameJa, Integer order, Object categories, Object tags,
       Date createdAt, Date updatedAt) {
     this.id = id;
     this.isHidden = isHidden;
@@ -45,16 +43,16 @@ public class Essay {
     return id;
   }
 
-  public void setId(String id) {
-    this.id = id;
-  }
-
-  public boolean getIsHidden() {
+  public Boolean getIsHidden() {
     return isHidden;
   }
 
-  public void setIsHidden(boolean isHidden) {
+  public void setIsHidden(Boolean isHidden) {
     this.isHidden = isHidden;
+  }
+
+  public void setId(String id) {
+    this.id = id;
   }
 
   public String getNameEn() {
@@ -73,11 +71,11 @@ public class Essay {
     this.nameJa = nameJa;
   }
 
-  public int getOrder() {
+  public Integer getOrder() {
     return order;
   }
 
-  public void setOrder(int order) {
+  public void setOrder(Integer order) {
     this.order = order;
   }
 

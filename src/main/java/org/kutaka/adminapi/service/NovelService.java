@@ -92,10 +92,57 @@ public class NovelService {
         throw new RuntimeException("Failed in uploading page images");
       }
     }
-
     novel = addAutoInsertData(novel);
 
-    return mongoTemplate.insert(novel);
+    return mongoTemplate.save(novel);
+  }
+
+  public Novel updateNovel(String novelId, Novel novel, MultipartFile cover, MultipartFile[] page) {
+    NovelValidator.validate(novel);
+
+    // retrieve existing document & update
+    Map<String, String> param = new HashMap<>();
+    param.put(DbFields.NOVEL.ID, novelId);
+    Query query = createQuery(param, new Query());
+    Novel existingNovel = mongoTemplate.findOne(query, Novel.class);
+
+    existingNovel.setIsHidden(novel.getIsHidden());
+    existingNovel.setNameEn(novel.getNameEn());
+    existingNovel.setNameJa(novel.getNameJa());
+    existingNovel.setCategories(novel.getCategories());
+    existingNovel.setTags(novel.getTags());
+    existingNovel.setUpdatedAt(new Date());
+
+    // cover image
+    if (cover != null) {
+      try {
+        cloudinaryConfig.getCloudinary().uploader().upload(cover.getBytes(),
+            ObjectUtils.asMap("resource_type", "auto", "public_id", "cover", "discard_original_filename", true,
+                "unique_filename", false, "folder",
+                Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + novel.getNameEn()));
+      } catch (IOException e1) {
+        throw new RuntimeException("Failed in uploading cover image");
+      }
+    }
+
+    // page images
+    if (page != null) {
+      for (int i = 0; i < page.length; i++) {
+        try {
+          cloudinaryConfig.getCloudinary().uploader().upload(page[i].getBytes(),
+              ObjectUtils.asMap("resource_type", "auto", "public_id", "page-" + String.format("%03d", i + 1),
+                  "discard_original_filename", true,
+                  "unique_filename", false, "folder",
+                  Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.NOVELS + "/" + novel.getNameEn()
+                      + "/" + Cloudinary.FOLDER_NAMES.PAGES));
+        } catch (IOException e) {
+          throw new RuntimeException("Failed in uploading page images");
+        }
+      }
+
+    }
+
+    return mongoTemplate.save(existingNovel);
   }
 
   /**
@@ -129,6 +176,9 @@ public class NovelService {
 
   private Query createQuery(Map<String, String> params, Query query) {
     params.forEach((key, value) -> {
+      if (key.equals(DbFields.NOVEL.ID)) {
+        query.addCriteria(Criteria.where(DbFields.NOVEL.ID).is(value));
+      }
       if (key.equals(DbFields.NOVEL.IS_HIDDEN)) {
         Boolean isTrue = value.equals("true");
         query.addCriteria(Criteria.where(DbFields.NOVEL.IS_HIDDEN).is(isTrue));

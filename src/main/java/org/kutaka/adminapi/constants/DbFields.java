@@ -3,6 +3,7 @@ package org.kutaka.adminapi.constants;
 public interface DbFields {
 
   interface NOVEL {
+    String ID = "_id";
     String IS_HIDDEN = "isHidden";
     String NAME_EN = "nameEn";
     String NAME_JA = "nameJa";
@@ -12,6 +13,7 @@ public interface DbFields {
   }
 
   interface ESSAY {
+    String ID = "_id";
     String IS_HIDDEN = "isHidden";
     String NAME_EN = "nameEn";
     String NAME_JA = "nameJa";

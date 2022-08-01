@@ -98,6 +98,54 @@ public class EssayService {
     return mongoTemplate.insert(essay);
   }
 
+  public Essay updateEssay(String essayId, Essay essay, MultipartFile cover, MultipartFile[] page) {
+    EssayValidator.validate(essay);
+
+    // retrieve existing document & update
+    Map<String, String> param = new HashMap<>();
+    param.put(DbFields.ESSAY.ID, essayId);
+    Query query = createQuery(param, new Query());
+    Essay existingEssay = mongoTemplate.findOne(query, Essay.class);
+
+    existingEssay.setIsHidden(essay.getIsHidden());
+    existingEssay.setNameEn(essay.getNameEn());
+    existingEssay.setNameJa(essay.getNameJa());
+    existingEssay.setCategories(essay.getCategories());
+    existingEssay.setTags(essay.getTags());
+    existingEssay.setUpdatedAt(new Date());
+
+    // cover image
+    if (cover != null) {
+      try {
+        cloudinaryConfig.getCloudinary().uploader().upload(cover.getBytes(),
+            ObjectUtils.asMap("resource_type", "auto", "public_id", "cover", "discard_original_filename", true,
+                "unique_filename", false, "folder",
+                Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.ESSAYS + "/" + essay.getNameEn()));
+      } catch (IOException e1) {
+        throw new RuntimeException("Failed in uploading cover image");
+      }
+    }
+
+    // page images
+    if (page != null) {
+      for (int i = 0; i < page.length; i++) {
+        try {
+          cloudinaryConfig.getCloudinary().uploader().upload(page[i].getBytes(),
+              ObjectUtils.asMap("resource_type", "auto", "public_id", "page-" + String.format("%03d", i + 1),
+                  "discard_original_filename", true,
+                  "unique_filename", false, "folder",
+                  Cloudinary.FOLDER_NAMES.ROOT + "/" + Cloudinary.BOOK_TYPES.ESSAYS + "/" + essay.getNameEn()
+                      + "/" + Cloudinary.FOLDER_NAMES.PAGES));
+        } catch (IOException e) {
+          throw new RuntimeException("Failed in uploading page images");
+        }
+      }
+
+    }
+
+    return mongoTemplate.save(existingEssay);
+  }
+
   /**
    * Fetch image data from Cloudinary based on MongoDB results
    */
@@ -129,6 +177,9 @@ public class EssayService {
 
   private Query createQuery(Map<String, String> params, Query query) {
     params.forEach((key, value) -> {
+      if (key.equals(DbFields.NOVEL.ID)) {
+        query.addCriteria(Criteria.where(DbFields.NOVEL.ID).is(value));
+      }
       if (key.equals(DbFields.ESSAY.IS_HIDDEN)) {
         Boolean isTrue = value.equals("true");
         query.addCriteria(Criteria.where(DbFields.ESSAY.IS_HIDDEN).is(isTrue));

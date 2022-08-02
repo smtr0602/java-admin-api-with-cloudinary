@@ -41,18 +41,18 @@ public class EssayService {
     }
     query.with(Sort.by(Sort.Direction.DESC, DbFields.ESSAY.ORDER));
 
-    List<Essay> results = mongoTemplate.find(query, Essay.class);
-    List<String> uniqueNames = new ArrayList<String>();
-    results.forEach(result -> {
+    List<Essay> mongoDbResult = mongoTemplate.find(query, Essay.class);
+    List<String> bookTitles = new ArrayList<String>();
+    mongoDbResult.forEach(result -> {
       String nameEn = result.getNameEn();
-      if (uniqueNames.contains(nameEn))
+      if (bookTitles.contains(nameEn))
         return;
-      uniqueNames.add(nameEn);
+      bookTitles.add(nameEn);
     });
-    Object images = bookHelper.getImagesFromCloudinary(uniqueNames, Cloudinary.BOOK_TYPES.ESSAYS);
+    Object images = bookHelper.getImagesFromCloudinary(bookTitles, Cloudinary.BOOK_TYPES.ESSAYS);
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-    response.put("book_data", results);
+    response.put("book_data", mongoDbResult);
     response.put("book_img_data", images);
 
     return response;
@@ -62,10 +62,10 @@ public class EssayService {
     Map<String, String> params = new HashMap<>();
     params.put(DbFields.ESSAY.ID, essayId);
     Query query = createQuery(params, new Query());
-    Essay bookData = mongoTemplate.findOne(query, Essay.class);
+    Essay mongoDbResult = mongoTemplate.findOne(query, Essay.class);
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-    if (bookData == null) {
+    if (mongoDbResult == null) {
       response.put("book_data", null);
       response.put("book_img_data", null);
 
@@ -73,10 +73,10 @@ public class EssayService {
     }
 
     List<String> titles = new ArrayList<String>();
-    titles.add(bookData.getNameEn());
+    titles.add(mongoDbResult.getNameEn());
     Object images = bookHelper.getImagesFromCloudinary(titles, Cloudinary.BOOK_TYPES.ESSAYS);
 
-    response.put("book_data", bookData);
+    response.put("book_data", mongoDbResult);
     response.put("book_img_data", images);
 
     return response;
@@ -94,13 +94,13 @@ public class EssayService {
       throw new AlreadyExistsException("Item with specified name already exists");
     }
 
-    Essay mongoDbRes = null;
-    Map cloudinaryCoverRes = null;
-    ArrayList<Map> cloudinaryPagesRes = new ArrayList<>();
+    Essay mongoDbResult = null;
+    Map cloudinaryCoverResult = null;
+    ArrayList<Map> cloudinaryPagesResult = new ArrayList<>();
 
     // cover image
     try {
-      cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
+      cloudinaryCoverResult = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
           essay.getNameEn());
     } catch (IOException e1) {
       throw new FailedInUploadingException("Failed in uploading cover image");
@@ -108,22 +108,22 @@ public class EssayService {
 
     // page images
     try {
-      cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.ESSAYS,
+      cloudinaryPagesResult = bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.ESSAYS,
           essay.getNameEn());
     } catch (IOException e) {
       throw new FailedInUploadingException("Failed in uploading page images");
     }
 
     essay = addAutoInsertData(essay);
-    mongoDbRes = mongoTemplate.save(essay);
-    if (mongoDbRes == null) {
+    mongoDbResult = mongoTemplate.save(essay);
+    if (mongoDbResult == null) {
       throw new FailedInAddingOrUpdatingException("Failed in adding new entry");
     }
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-    response.put("book_data", mongoDbRes);
-    response.put("book_cover_img_data", cloudinaryCoverRes);
-    response.put("book_page_imgs_data", cloudinaryPagesRes);
+    response.put("book_data", mongoDbResult);
+    response.put("book_cover_img_data", cloudinaryCoverResult);
+    response.put("book_page_imgs_data", cloudinaryPagesResult);
 
     return response;
   }
@@ -145,14 +145,14 @@ public class EssayService {
     existingEssay.setTags(essay.getTags());
     existingEssay.setUpdatedAt(new Date());
 
-    Essay mongoDbRes = null;
-    Map cloudinaryCoverRes = null;
-    ArrayList<Map> cloudinaryPagesRes = new ArrayList<Map>();
+    Essay mongoDbResult = null;
+    Map cloudinaryCoverResult = null;
+    ArrayList<Map> cloudinaryPagesResult = new ArrayList<Map>();
 
     // cover image
     if (cover != null) {
       try {
-        cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
+        cloudinaryCoverResult = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
             essay.getNameEn());
       } catch (IOException e1) {
         throw new FailedInUploadingException("Failed in uploading cover image");
@@ -163,7 +163,7 @@ public class EssayService {
     if (pages != null) {
       for (int i = 0; i < pages.length; i++) {
         try {
-          cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(pages, Cloudinary.BOOK_TYPES.ESSAYS,
+          cloudinaryPagesResult = bookHelper.uploadPageImagesToCloudinary(pages, Cloudinary.BOOK_TYPES.ESSAYS,
               essay.getNameEn());
         } catch (IOException e) {
           throw new FailedInUploadingException("Failed in uploading page images");
@@ -171,15 +171,15 @@ public class EssayService {
       }
     }
 
-    mongoDbRes = mongoTemplate.save(existingEssay);
-    if (mongoDbRes == null) {
+    mongoDbResult = mongoTemplate.save(existingEssay);
+    if (mongoDbResult == null) {
       throw new FailedInAddingOrUpdatingException("Failed in updating existing entry");
     }
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
-    response.put("book_data", mongoDbRes);
-    response.put("book_cover_img_data", cloudinaryCoverRes);
-    response.put("book_page_imgs_data", cloudinaryPagesRes);
+    response.put("book_data", mongoDbResult);
+    response.put("book_cover_img_data", cloudinaryCoverResult);
+    response.put("book_page_imgs_data", cloudinaryPagesResult);
 
     return response;
   }

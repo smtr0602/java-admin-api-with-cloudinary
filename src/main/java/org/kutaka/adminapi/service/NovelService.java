@@ -56,6 +56,30 @@ public class NovelService {
     return response;
   }
 
+  public LinkedHashMap<String, Object> getNovel(String novelId) {
+    Map<String, String> params = new HashMap<>();
+    params.put(DbFields.NOVEL.ID, novelId);
+    Query query = createQuery(params, new Query());
+    Novel bookData = mongoTemplate.findOne(query, Novel.class);
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    if (bookData == null) {
+      response.put("book_data", null);
+      response.put("book_img_data", null);
+
+      return response;
+    }
+
+    List<String> titles = new ArrayList<String>();
+    titles.add(bookData.getNameEn());
+    Object images = bookHelper.getImagesFromCloudinary(titles, Cloudinary.BOOK_TYPES.NOVELS);
+
+    response.put("book_data", bookData);
+    response.put("book_img_data", images);
+
+    return response;
+  }
+
   public LinkedHashMap<String, Object> addNovel(Novel novel, MultipartFile cover, MultipartFile[] files) {
     NovelValidator.validate(novel);
 

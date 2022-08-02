@@ -26,6 +26,11 @@ public class EssayController {
     return essayService.getEssays(params);
   }
 
+  @GetMapping(path = "/essays/{essayId}", produces = "application/json")
+  public LinkedHashMap<String, Object> getEssay(@PathVariable String essayId) {
+    return essayService.getEssay(essayId);
+  }
+
   @PostMapping(path = "/essays", consumes = "multipart/form-data", produces = "application/json")
   public LinkedHashMap<String, Object> addEssay(@ModelAttribute Essay essay, @RequestParam MultipartFile cover,
       @RequestParam MultipartFile[] pages) {

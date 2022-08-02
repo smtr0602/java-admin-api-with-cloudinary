@@ -27,8 +27,8 @@ public class NovelController {
   }
 
   @GetMapping(path = "/novels/{novelId}", produces = "application/json")
-  public LinkedHashMap<String, Object> getNovel(@RequestParam Map<String, String> params) {
-    return novelService.getNovels(params);
+  public LinkedHashMap<String, Object> getNovel(@PathVariable String novelId) {
+    return novelService.getNovel(novelId);
   }
 
   @PostMapping(path = "/novels", consumes = "multipart/form-data", produces = "application/json")

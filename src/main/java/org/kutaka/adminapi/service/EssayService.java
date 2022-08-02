@@ -56,6 +56,30 @@ public class EssayService {
     return response;
   }
 
+  public LinkedHashMap<String, Object> getEssay(String essayId) {
+    Map<String, String> params = new HashMap<>();
+    params.put(DbFields.ESSAY.ID, essayId);
+    Query query = createQuery(params, new Query());
+    Essay bookData = mongoTemplate.findOne(query, Essay.class);
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    if (bookData == null) {
+      response.put("book_data", null);
+      response.put("book_img_data", null);
+
+      return response;
+    }
+
+    List<String> titles = new ArrayList<String>();
+    titles.add(bookData.getNameEn());
+    Object images = bookHelper.getImagesFromCloudinary(titles, Cloudinary.BOOK_TYPES.ESSAYS);
+
+    response.put("book_data", bookData);
+    response.put("book_img_data", images);
+
+    return response;
+  }
+
   public LinkedHashMap<String, Object> addEssay(Essay essay, MultipartFile cover, MultipartFile[] files) {
     EssayValidator.validate(essay);
 

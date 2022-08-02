@@ -94,7 +94,7 @@ public class NovelService {
 
     Novel mongoDbRes = null;
     Map cloudinaryCoverRes = null;
-    ArrayList<Map> cloudinaryPagesRes = null;
+    ArrayList<Map> cloudinaryPagesRes = new ArrayList<>();
 
     // cover image
     try {
@@ -142,7 +142,7 @@ public class NovelService {
 
     Novel mongoDbRes = null;
     Map cloudinaryCoverRes = null;
-    ArrayList<Map> cloudinaryPagesRes = null;
+    ArrayList<Map> cloudinaryPagesRes = new ArrayList<Map>();
 
     // cover image
     if (cover != null) {

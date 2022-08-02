@@ -33,15 +33,15 @@ public class NovelController {
 
   @PostMapping(path = "/novels", consumes = "multipart/form-data", produces = "application/json")
   public LinkedHashMap<String, Object> addNovel(@ModelAttribute Novel novel, @RequestParam MultipartFile cover,
-      @RequestParam MultipartFile[] page) {
-    return novelService.addNovel(novel, cover, page);
+      @RequestParam MultipartFile[] pages) {
+    return novelService.addNovel(novel, cover, pages);
   }
 
   @RequestMapping(value = "/novels/{novelId}", method = {
       RequestMethod.PUT }, consumes = "multipart/form-data", produces = "application/json")
   public LinkedHashMap<String, Object> updateNovel(@PathVariable String novelId, @ModelAttribute Novel novel,
       @RequestParam(required = false) MultipartFile cover,
-      @RequestParam(required = false) MultipartFile[] page) {
-    return novelService.updateNovel(novelId, novel, cover, page);
+      @RequestParam(required = false) MultipartFile[] pages) {
+    return novelService.updateNovel(novelId, novel, cover, pages);
   }
 }

@@ -28,15 +28,15 @@ public class EssayController {
 
   @PostMapping(path = "/essays", consumes = "multipart/form-data", produces = "application/json")
   public LinkedHashMap<String, Object> addEssay(@ModelAttribute Essay essay, @RequestParam MultipartFile cover,
-      @RequestParam MultipartFile[] page) {
-    return essayService.addEssay(essay, cover, page);
+      @RequestParam MultipartFile[] pages) {
+    return essayService.addEssay(essay, cover, pages);
   }
 
   @RequestMapping(value = "/essays/{essayId}", method = {
       RequestMethod.PUT }, consumes = "multipart/form-data", produces = "application/json")
   public LinkedHashMap<String, Object> updateEssay(@PathVariable String essayId, @ModelAttribute Essay essay,
       @RequestParam(required = false) MultipartFile cover,
-      @RequestParam(required = false) MultipartFile[] page) {
-    return essayService.updateEssay(essayId, essay, cover, page);
+      @RequestParam(required = false) MultipartFile[] pages) {
+    return essayService.updateEssay(essayId, essay, cover, pages);
   }
 }

@@ -100,7 +100,7 @@ public class EssayService {
   }
 
   public LinkedHashMap<String, Object> updateEssay(String essayId, Essay essay, MultipartFile cover,
-      MultipartFile[] page) {
+      MultipartFile[] pages) {
     EssayValidator.validate(essay);
 
     // retrieve existing document & update
@@ -131,10 +131,10 @@ public class EssayService {
     }
 
     // page images
-    if (page != null) {
-      for (int i = 0; i < page.length; i++) {
+    if (pages != null) {
+      for (int i = 0; i < pages.length; i++) {
         try {
-          cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(page, Cloudinary.BOOK_TYPES.ESSAYS,
+          cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(pages, Cloudinary.BOOK_TYPES.ESSAYS,
               essay.getNameEn());
         } catch (IOException e) {
           throw new RuntimeException("Failed in uploading page images");

@@ -44,4 +44,9 @@ public class EssayController {
       @RequestParam(required = false) MultipartFile[] pages) {
     return essayService.updateEssay(essayId, essay, cover, pages);
   }
+
+  @RequestMapping(value = "/essays/{essayId}", method = { RequestMethod.DELETE }, produces = "application/json")
+  public LinkedHashMap<String, Object> deleteEssay(@PathVariable String essayId, @ModelAttribute Essay essay) {
+    return essayService.deleteEssay(essayId);
+  }
 }

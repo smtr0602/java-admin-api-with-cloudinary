@@ -44,4 +44,9 @@ public class NovelController {
       @RequestParam(required = false) MultipartFile[] pages) {
     return novelService.updateNovel(novelId, novel, cover, pages);
   }
+
+  @RequestMapping(value = "/novels/{novelId}", method = { RequestMethod.DELETE }, produces = "application/json")
+  public LinkedHashMap<String, Object> deleteNovel(@PathVariable String novelId, @ModelAttribute Novel novel) {
+    return novelService.deleteNovel(novelId);
+  }
 }

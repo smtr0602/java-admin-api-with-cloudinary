@@ -69,4 +69,12 @@ public class BookHelper {
     }
     return responses;
   }
+
+  public ApiResponse deleteImagesFromCloudinary(String bookType, String folderName) throws Exception {
+    String prefix = Cloudinary.FOLDER_NAMES.ROOT + "/" + bookType + "/" + folderName;
+    ;
+    ApiResponse response = cloudinaryConfig.getCloudinary().api().deleteResourcesByPrefix(prefix, null);
+
+    return response;
+  }
 }

@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.Map;
 import org.kutaka.adminapi.constants.DbFields;
 import org.kutaka.adminapi.exception.AlreadyExistsException;
-import org.kutaka.adminapi.exception.FailedInAddingOrUpdatingException;
-import org.kutaka.adminapi.exception.FailedInUploadingException;
+import org.kutaka.adminapi.exception.FailedDbDataManipulationException;
+import org.kutaka.adminapi.exception.ObjectNotFoundException;
+import org.kutaka.adminapi.exception.FailedCloudinaryDataManipulationException;
 import org.kutaka.adminapi.helper.BookHelper;
 import org.kutaka.adminapi.constants.Cloudinary;
 import org.kutaka.adminapi.model.Essay;
@@ -22,6 +23,9 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.cloudinary.api.ApiResponse;
+import com.mongodb.client.result.DeleteResult;
 
 @Service
 public class EssayService {
@@ -103,7 +107,7 @@ public class EssayService {
       cloudinaryCoverResult = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
           essay.getNameEn());
     } catch (IOException e1) {
-      throw new FailedInUploadingException("Failed in uploading cover image");
+      throw new FailedCloudinaryDataManipulationException("Failed in uploading cover image");
     }
 
     // page images
@@ -111,13 +115,13 @@ public class EssayService {
       cloudinaryPagesResult = bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.ESSAYS,
           essay.getNameEn());
     } catch (IOException e) {
-      throw new FailedInUploadingException("Failed in uploading page images");
+      throw new FailedCloudinaryDataManipulationException("Failed in uploading page images");
     }
 
     essay = addAutoInsertData(essay);
     mongoDbResult = mongoTemplate.save(essay);
     if (mongoDbResult == null) {
-      throw new FailedInAddingOrUpdatingException("Failed in adding new entry");
+      throw new FailedDbDataManipulationException("Failed in adding new entry");
     }
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
@@ -155,7 +159,7 @@ public class EssayService {
         cloudinaryCoverResult = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
             essay.getNameEn());
       } catch (IOException e1) {
-        throw new FailedInUploadingException("Failed in uploading cover image");
+        throw new FailedCloudinaryDataManipulationException("Failed in uploading cover image");
       }
     }
 
@@ -166,20 +170,45 @@ public class EssayService {
           cloudinaryPagesResult = bookHelper.uploadPageImagesToCloudinary(pages, Cloudinary.BOOK_TYPES.ESSAYS,
               essay.getNameEn());
         } catch (IOException e) {
-          throw new FailedInUploadingException("Failed in uploading page images");
+          throw new FailedCloudinaryDataManipulationException("Failed in uploading page images");
         }
       }
     }
 
     mongoDbResult = mongoTemplate.save(existingEssay);
     if (mongoDbResult == null) {
-      throw new FailedInAddingOrUpdatingException("Failed in updating existing entry");
+      throw new FailedDbDataManipulationException("Failed in updating existing entry with specified id");
     }
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
     response.put("book_data", mongoDbResult);
     response.put("book_cover_img_data", cloudinaryCoverResult);
     response.put("book_page_imgs_data", cloudinaryPagesResult);
+
+    return response;
+  }
+
+  public LinkedHashMap<String, Object> deleteEssay(String essayId) {
+    Map<String, String> params = new HashMap<>();
+    params.put(DbFields.ESSAY.ID, essayId);
+    Query query = createQuery(params, new Query());
+    Essay targetBook = mongoTemplate.findOne(query, Essay.class);
+    if (targetBook == null) {
+      throw new ObjectNotFoundException("No entry with specified id exists");
+    }
+
+    String bookTitle = targetBook.getNameEn();
+    DeleteResult mongoDbResult = mongoTemplate.remove(query, Essay.class);
+    ApiResponse cloudinaryResult;
+    try {
+      cloudinaryResult = bookHelper.deleteImagesFromCloudinary(Cloudinary.BOOK_TYPES.ESSAYS, bookTitle);
+    } catch (Exception e) {
+      throw new FailedCloudinaryDataManipulationException("Failed in deleting images on Cloudinary");
+    }
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    response.put("book_data", mongoDbResult);
+    response.put("book_img_data", cloudinaryResult);
 
     return response;
   }

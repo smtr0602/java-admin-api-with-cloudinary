@@ -28,18 +28,27 @@ public class GlobalExceptionHandler {
     return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
   }
 
-  @ExceptionHandler(FailedInAddingOrUpdatingException.class)
-  public ResponseEntity<?> handleFailedInAddingOrUpdatingException(
-      FailedInAddingOrUpdatingException exception, WebRequest request) {
+  @ExceptionHandler(ObjectNotFoundException.class)
+  public ResponseEntity<?> handleObjectNotFoundException(
+      ObjectNotFoundException exception, WebRequest request) {
+    ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), HttpStatus.BAD_REQUEST,
+        exception.getMessage(),
+        request.getDescription(false));
+    return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(FailedDbDataManipulationException.class)
+  public ResponseEntity<?> handleFailedDbDataManipulationException(
+      FailedDbDataManipulationException exception, WebRequest request) {
     ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), HttpStatus.INTERNAL_SERVER_ERROR,
         exception.getMessage(),
         request.getDescription(false));
     return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
   };
 
-  @ExceptionHandler(FailedInUploadingException.class)
-  public ResponseEntity<?> handleFailedInUploadingException(
-      FailedInUploadingException exception, WebRequest request) {
+  @ExceptionHandler(FailedCloudinaryDataManipulationException.class)
+  public ResponseEntity<?> handleFailedCloudinaryDataManipulationException(
+      FailedCloudinaryDataManipulationException exception, WebRequest request) {
     ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), HttpStatus.INTERNAL_SERVER_ERROR,
         exception.getMessage(),
         request.getDescription(false));

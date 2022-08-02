@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import org.kutaka.adminapi.constants.DbFields;
 import org.kutaka.adminapi.exception.AlreadyExistsException;
+import org.kutaka.adminapi.exception.FailedInAddingOrUpdatingException;
+import org.kutaka.adminapi.exception.FailedInUploadingException;
 import org.kutaka.adminapi.helper.BookHelper;
 import org.kutaka.adminapi.constants.Cloudinary;
 import org.kutaka.adminapi.model.Novel;
@@ -101,7 +103,7 @@ public class NovelService {
       cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.NOVELS,
           novel.getNameEn());
     } catch (IOException e1) {
-      throw new RuntimeException("Failed in uploading cover image");
+      throw new FailedInUploadingException("Failed in uploading cover image");
     }
 
     // page images
@@ -109,11 +111,14 @@ public class NovelService {
       cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.NOVELS,
           novel.getNameEn());
     } catch (IOException e) {
-      throw new RuntimeException("Failed in uploading page images");
+      throw new FailedInUploadingException("Failed in uploading page images");
     }
 
     novel = addAutoInsertData(novel);
     mongoDbRes = mongoTemplate.save(novel);
+    if (mongoDbRes == null) {
+      throw new FailedInAddingOrUpdatingException("Failed in adding new entry");
+    }
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
     response.put("book_data", mongoDbRes);
@@ -150,7 +155,7 @@ public class NovelService {
         cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.NOVELS,
             novel.getNameEn());
       } catch (IOException e1) {
-        throw new RuntimeException("Failed in uploading cover image");
+        throw new FailedInUploadingException("Failed in uploading cover image");
       }
     }
 
@@ -161,12 +166,15 @@ public class NovelService {
           cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(pages, Cloudinary.BOOK_TYPES.NOVELS,
               novel.getNameEn());
         } catch (IOException e) {
-          throw new RuntimeException("Failed in uploading page images");
+          throw new FailedInUploadingException("Failed in uploading page images");
         }
       }
     }
 
     mongoDbRes = mongoTemplate.save(existingNovel);
+    if (mongoDbRes == null) {
+      throw new FailedInAddingOrUpdatingException("Failed in updating existing entry");
+    }
 
     LinkedHashMap<String, Object> response = new LinkedHashMap<>();
     response.put("book_data", mongoDbRes);

@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import org.kutaka.adminapi.constants.DbFields;
 import org.kutaka.adminapi.exception.AlreadyExistsException;
 import org.kutaka.adminapi.helper.BookHelper;
@@ -32,14 +32,13 @@ public class NovelService {
     this.bookHelper = new BookHelper();
   }
 
-  public TreeMap<String, Object> getNovels(Map<String, String> params) {
+  public LinkedHashMap<String, Object> getNovels(Map<String, String> params) {
     Query query = new Query();
     if (!params.isEmpty()) {
       query = createQuery(params, query);
     }
     query.with(Sort.by(Sort.Direction.DESC, DbFields.NOVEL.ORDER));
 
-    TreeMap<String, Object> response = new TreeMap<>();
     List<Novel> results = mongoTemplate.find(query, Novel.class);
     List<String> uniqueNames = new ArrayList<String>();
     results.forEach(result -> {
@@ -49,13 +48,15 @@ public class NovelService {
       uniqueNames.add(nameEn);
     });
     Object images = bookHelper.getImagesFromCloudinary(uniqueNames, Cloudinary.BOOK_TYPES.NOVELS);
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
     response.put("book_data", results);
     response.put("book_img_data", images);
 
     return response;
   }
 
-  public Novel addNovel(Novel novel, MultipartFile cover, MultipartFile[] files) {
+  public LinkedHashMap<String, Object> addNovel(Novel novel, MultipartFile cover, MultipartFile[] files) {
     NovelValidator.validate(novel);
 
     // check if already exists
@@ -67,26 +68,39 @@ public class NovelService {
       throw new AlreadyExistsException("Item with specified name already exists");
     }
 
+    Novel mongoDbRes = null;
+    Map cloudinaryCoverRes = null;
+    ArrayList<Map> cloudinaryPagesRes = null;
+
     // cover image
     try {
-      bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.NOVELS, novel.getNameEn());
+      cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.NOVELS,
+          novel.getNameEn());
     } catch (IOException e1) {
       throw new RuntimeException("Failed in uploading cover image");
     }
 
     // page images
     try {
-      bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.NOVELS, novel.getNameEn());
+      cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.NOVELS,
+          novel.getNameEn());
     } catch (IOException e) {
       throw new RuntimeException("Failed in uploading page images");
     }
 
     novel = addAutoInsertData(novel);
+    mongoDbRes = mongoTemplate.save(novel);
 
-    return mongoTemplate.save(novel);
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    response.put("book_data", mongoDbRes);
+    response.put("book_cover_img_data", cloudinaryCoverRes);
+    response.put("book_page_imgs_data", cloudinaryPagesRes);
+
+    return response;
   }
 
-  public Novel updateNovel(String novelId, Novel novel, MultipartFile cover, MultipartFile[] page) {
+  public LinkedHashMap<String, Object> updateNovel(String novelId, Novel novel, MultipartFile cover,
+      MultipartFile[] page) {
     NovelValidator.validate(novel);
 
     // retrieve existing document & update
@@ -102,10 +116,15 @@ public class NovelService {
     existingNovel.setTags(novel.getTags());
     existingNovel.setUpdatedAt(new Date());
 
+    Novel mongoDbRes = null;
+    Map cloudinaryCoverRes = null;
+    ArrayList<Map> cloudinaryPagesRes = null;
+
     // cover image
     if (cover != null) {
       try {
-        bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.NOVELS, novel.getNameEn());
+        cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.NOVELS,
+            novel.getNameEn());
       } catch (IOException e1) {
         throw new RuntimeException("Failed in uploading cover image");
       }
@@ -115,14 +134,22 @@ public class NovelService {
     if (page != null) {
       for (int i = 0; i < page.length; i++) {
         try {
-          bookHelper.uploadPageImagesToCloudinary(page, Cloudinary.BOOK_TYPES.NOVELS, novel.getNameEn());
+          cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(page, Cloudinary.BOOK_TYPES.NOVELS,
+              novel.getNameEn());
         } catch (IOException e) {
           throw new RuntimeException("Failed in uploading page images");
         }
       }
     }
 
-    return mongoTemplate.save(existingNovel);
+    mongoDbRes = mongoTemplate.save(existingNovel);
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    response.put("book_data", mongoDbRes);
+    response.put("book_cover_img_data", cloudinaryCoverRes);
+    response.put("book_page_imgs_data", cloudinaryPagesRes);
+
+    return response;
   }
 
   private Query createQuery(Map<String, String> params, Query query) {

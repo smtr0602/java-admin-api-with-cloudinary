@@ -1,7 +1,7 @@
 package org.kutaka.adminapi.controller;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import org.kutaka.adminapi.model.Essay;
 import org.kutaka.adminapi.service.EssayService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,19 +22,19 @@ public class EssayController {
   private EssayService essayService;
 
   @GetMapping(path = "/essays", produces = "application/json")
-  public TreeMap<String, Object> getEssays(@RequestParam Map<String, String> params) {
+  public LinkedHashMap<String, Object> getEssays(@RequestParam Map<String, String> params) {
     return essayService.getEssays(params);
   }
 
   @PostMapping(path = "/essays", consumes = "multipart/form-data", produces = "application/json")
-  public Object addEssay(@ModelAttribute Essay essay, @RequestParam MultipartFile cover,
+  public LinkedHashMap<String, Object> addEssay(@ModelAttribute Essay essay, @RequestParam MultipartFile cover,
       @RequestParam MultipartFile[] page) {
     return essayService.addEssay(essay, cover, page);
   }
 
   @RequestMapping(value = "/essays/{essayId}", method = {
       RequestMethod.PUT }, consumes = "multipart/form-data", produces = "application/json")
-  public Object updateEssay(@PathVariable String essayId, @ModelAttribute Essay essay,
+  public LinkedHashMap<String, Object> updateEssay(@PathVariable String essayId, @ModelAttribute Essay essay,
       @RequestParam(required = false) MultipartFile cover,
       @RequestParam(required = false) MultipartFile[] page) {
     return essayService.updateEssay(essayId, essay, cover, page);

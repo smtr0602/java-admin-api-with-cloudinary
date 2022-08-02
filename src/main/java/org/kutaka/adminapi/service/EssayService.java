@@ -4,9 +4,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import org.kutaka.adminapi.constants.DbFields;
 import org.kutaka.adminapi.exception.AlreadyExistsException;
 import org.kutaka.adminapi.helper.BookHelper;
@@ -32,14 +32,13 @@ public class EssayService {
     this.bookHelper = new BookHelper();
   }
 
-  public TreeMap<String, Object> getEssays(Map<String, String> params) {
+  public LinkedHashMap<String, Object> getEssays(Map<String, String> params) {
     Query query = new Query();
     if (!params.isEmpty()) {
       query = createQuery(params, query);
     }
     query.with(Sort.by(Sort.Direction.DESC, DbFields.ESSAY.ORDER));
 
-    TreeMap<String, Object> response = new TreeMap<>();
     List<Essay> results = mongoTemplate.find(query, Essay.class);
     List<String> uniqueNames = new ArrayList<String>();
     results.forEach(result -> {
@@ -49,13 +48,15 @@ public class EssayService {
       uniqueNames.add(nameEn);
     });
     Object images = bookHelper.getImagesFromCloudinary(uniqueNames, Cloudinary.BOOK_TYPES.ESSAYS);
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
     response.put("book_data", results);
     response.put("book_img_data", images);
 
     return response;
   }
 
-  public Essay addEssay(Essay essay, MultipartFile cover, MultipartFile[] files) {
+  public LinkedHashMap<String, Object> addEssay(Essay essay, MultipartFile cover, MultipartFile[] files) {
     EssayValidator.validate(essay);
 
     // check if already exists
@@ -67,28 +68,39 @@ public class EssayService {
       throw new AlreadyExistsException("Item with specified name already exists");
     }
 
+    Essay mongoDbRes = null;
+    Map cloudinaryCoverRes = null;
+    ArrayList<Map> cloudinaryPagesRes = null;
+
     // cover image
     try {
-      bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS, essay.getNameEn());
+      cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
+          essay.getNameEn());
     } catch (IOException e1) {
       throw new RuntimeException("Failed in uploading cover image");
     }
 
     // page images
-    for (int i = 0; i < files.length; i++) {
-      try {
-        bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.ESSAYS, essay.getNameEn());
-      } catch (IOException e) {
-        throw new RuntimeException("Failed in uploading page images");
-      }
+    try {
+      cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(files, Cloudinary.BOOK_TYPES.ESSAYS,
+          essay.getNameEn());
+    } catch (IOException e) {
+      throw new RuntimeException("Failed in uploading page images");
     }
 
     essay = addAutoInsertData(essay);
+    mongoDbRes = mongoTemplate.save(essay);
 
-    return mongoTemplate.insert(essay);
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    response.put("book_data", mongoDbRes);
+    response.put("book_cover_img_data", cloudinaryCoverRes);
+    response.put("book_page_imgs_data", cloudinaryPagesRes);
+
+    return response;
   }
 
-  public Essay updateEssay(String essayId, Essay essay, MultipartFile cover, MultipartFile[] page) {
+  public LinkedHashMap<String, Object> updateEssay(String essayId, Essay essay, MultipartFile cover,
+      MultipartFile[] page) {
     EssayValidator.validate(essay);
 
     // retrieve existing document & update
@@ -104,10 +116,15 @@ public class EssayService {
     existingEssay.setTags(essay.getTags());
     existingEssay.setUpdatedAt(new Date());
 
+    Essay mongoDbRes = null;
+    Map cloudinaryCoverRes = null;
+    ArrayList<Map> cloudinaryPagesRes = null;
+
     // cover image
     if (cover != null) {
       try {
-        bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS, essay.getNameEn());
+        cloudinaryCoverRes = bookHelper.uploadCoverImageToCloudinary(cover, Cloudinary.BOOK_TYPES.ESSAYS,
+            essay.getNameEn());
       } catch (IOException e1) {
         throw new RuntimeException("Failed in uploading cover image");
       }
@@ -115,21 +132,30 @@ public class EssayService {
 
     // page images
     if (page != null) {
-      try {
-        bookHelper.uploadPageImagesToCloudinary(page, Cloudinary.BOOK_TYPES.ESSAYS, essay.getNameEn());
-      } catch (IOException e) {
-        throw new RuntimeException("Failed in uploading page images");
+      for (int i = 0; i < page.length; i++) {
+        try {
+          cloudinaryPagesRes = bookHelper.uploadPageImagesToCloudinary(page, Cloudinary.BOOK_TYPES.ESSAYS,
+              essay.getNameEn());
+        } catch (IOException e) {
+          throw new RuntimeException("Failed in uploading page images");
+        }
       }
-
     }
 
-    return mongoTemplate.save(existingEssay);
+    mongoDbRes = mongoTemplate.save(existingEssay);
+
+    LinkedHashMap<String, Object> response = new LinkedHashMap<>();
+    response.put("book_data", mongoDbRes);
+    response.put("book_cover_img_data", cloudinaryCoverRes);
+    response.put("book_page_imgs_data", cloudinaryPagesRes);
+
+    return response;
   }
 
   private Query createQuery(Map<String, String> params, Query query) {
     params.forEach((key, value) -> {
-      if (key.equals(DbFields.NOVEL.ID)) {
-        query.addCriteria(Criteria.where(DbFields.NOVEL.ID).is(value));
+      if (key.equals(DbFields.ESSAY.ID)) {
+        query.addCriteria(Criteria.where(DbFields.ESSAY.ID).is(value));
       }
       if (key.equals(DbFields.ESSAY.IS_HIDDEN)) {
         Boolean isTrue = value.equals("true");

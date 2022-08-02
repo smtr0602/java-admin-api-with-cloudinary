@@ -2,7 +2,9 @@ package org.kutaka.adminapi.helper;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.kutaka.adminapi.config.CloudinaryConfig;
 import org.kutaka.adminapi.constants.Cloudinary;
@@ -45,20 +47,26 @@ public class BookHelper {
     return cloudinaryRes.values().iterator().next();
   }
 
-  public void uploadCoverImageToCloudinary(MultipartFile image, String bookType, String folderName) throws IOException {
-    cloudinaryConfig.getCloudinary().uploader().upload(image.getBytes(),
+  public Map uploadCoverImageToCloudinary(MultipartFile image, String bookType, String folderName)
+      throws IOException {
+    Map response = cloudinaryConfig.getCloudinary().uploader().upload(image.getBytes(),
         ObjectUtils.asMap("resource_type", "auto", "public_id", "cover", "discard_original_filename", true,
             "unique_filename", false, "folder", Cloudinary.FOLDER_NAMES.ROOT + "/" + bookType + "/" + folderName));
+
+    return response;
   }
 
-  public void uploadPageImagesToCloudinary(MultipartFile[] images, String bookType, String folderName)
+  public ArrayList<Map> uploadPageImagesToCloudinary(MultipartFile[] images, String bookType, String folderName)
       throws IOException {
+    ArrayList<Map> responses = new ArrayList<>();
     for (int i = 0; i < images.length; i++) {
-      cloudinaryConfig.getCloudinary().uploader().upload(images[i].getBytes(),
+      Map res = cloudinaryConfig.getCloudinary().uploader().upload(images[i].getBytes(),
           ObjectUtils.asMap("resource_type", "auto", "public_id", "page-" + String.format("%03d", i + 1),
               "discard_original_filename", true,
               "unique_filename", false, "folder",
               Cloudinary.FOLDER_NAMES.ROOT + "/" + bookType + "/" + folderName + "/" + Cloudinary.FOLDER_NAMES.PAGES));
+      responses.add(res);
     }
+    return responses;
   }
 }

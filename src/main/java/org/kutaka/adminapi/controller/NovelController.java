@@ -1,7 +1,7 @@
 package org.kutaka.adminapi.controller;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.TreeMap;
 import org.kutaka.adminapi.model.Novel;
 import org.kutaka.adminapi.service.NovelService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,24 +22,24 @@ public class NovelController {
   private NovelService novelService;
 
   @GetMapping(path = "/novels", produces = "application/json")
-  public TreeMap<String, Object> getNovels(@RequestParam Map<String, String> params) {
+  public LinkedHashMap<String, Object> getNovels(@RequestParam Map<String, String> params) {
     return novelService.getNovels(params);
   }
 
   @GetMapping(path = "/novels/{novelId}", produces = "application/json")
-  public TreeMap<String, Object> getNovel(@RequestParam Map<String, String> params) {
+  public LinkedHashMap<String, Object> getNovel(@RequestParam Map<String, String> params) {
     return novelService.getNovels(params);
   }
 
   @PostMapping(path = "/novels", consumes = "multipart/form-data", produces = "application/json")
-  public Object addNovel(@ModelAttribute Novel novel, @RequestParam MultipartFile cover,
+  public LinkedHashMap<String, Object> addNovel(@ModelAttribute Novel novel, @RequestParam MultipartFile cover,
       @RequestParam MultipartFile[] page) {
     return novelService.addNovel(novel, cover, page);
   }
 
   @RequestMapping(value = "/novels/{novelId}", method = {
       RequestMethod.PUT }, consumes = "multipart/form-data", produces = "application/json")
-  public Object updateNovel(@PathVariable String novelId, @ModelAttribute Novel novel,
+  public LinkedHashMap<String, Object> updateNovel(@PathVariable String novelId, @ModelAttribute Novel novel,
       @RequestParam(required = false) MultipartFile cover,
       @RequestParam(required = false) MultipartFile[] page) {
     return novelService.updateNovel(novelId, novel, cover, page);

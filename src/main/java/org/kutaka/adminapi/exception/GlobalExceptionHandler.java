@@ -10,9 +10,9 @@ import org.springframework.web.context.request.WebRequest;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(MissingRequestParameterException.class)
-  public ResponseEntity<?> handleMissingRequestParameterException(
-      MissingRequestParameterException exception, WebRequest request) {
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<?> handleIllegalArgumentException(
+      IllegalArgumentException exception, WebRequest request) {
     ErrorDetails errorDetails = new ErrorDetails(LocalDateTime.now(), HttpStatus.BAD_REQUEST,
         exception.getMessage(),
         request.getDescription(false));

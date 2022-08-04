@@ -2,6 +2,7 @@ package org.kutaka.adminapi.controller;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import org.kutaka.adminapi.model.Novel;
 import org.kutaka.adminapi.service.NovelService;
 import org.springframework.beans.factory.annotation.Autowired;

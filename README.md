@@ -10,6 +10,13 @@ This is an API for [kutaka app](https://github.com/smtr0602/kutaka-app) admin us
 - I was planning on using Node.js to develop the API (and I still am in the future), but I had the chance to learn Spring Boot,
   so I thought I would try and see how solid of an API I could create **in two weeks** with Sprint Boot.
 
+### Tech Stack
+
+- Java Spring Boot
+- MongoDB
+- Cloudinary (cloud storage)
+- Heroku
+
 ## Features
 
 ### POST: `/auth/login`
@@ -84,13 +91,6 @@ pages: image files
 ### DELETE: `/novels/{novelId}`
 
 Delete existing novel entry
-
-### Tech Stack
-
-- Spring Boot
-- MongoDB Atlas
-- Cloudinary (cloud storage)
-- Heroku
 
 ## Difficulties
 
